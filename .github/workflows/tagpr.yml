@@ -16,12 +16,24 @@ jobs:
       id-token: write
       attestations: write
     steps:
+      - name: Generate token
+        id: generate_token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ secrets.WORKFLOW_KICKER_APP_ID }
+          private-key: ${{ secrets.WORKFLOW_KICKER_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: read
+
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
 
       - uses: Songmu/tagpr@6423eaf899ec18cb0f5ad3e5c3a7482595a62f04 # v1.12.1
         id: tagpr
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
 
       - name: Release
         if: steps.tagpr.outputs.tag != ''
@@ -29,3 +41,4 @@ jobs:
         with:
           generate_attestations: true
           go_version_file: go.mod
+          github_token: ${{ steps.generate_token.outputs.token }}
