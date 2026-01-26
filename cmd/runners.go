@@ -15,7 +15,7 @@ var runnersCmd = &cobra.Command{
 	Long: `List all runners in the specified runner group.
 
 The command requires:
-- An enterprise name specified with the --enterprise flag
+- Exactly one of: an enterprise name (--enterprise flag) OR an organization name (--org flag)
 - A runner group ID as a positional argument
 
 Optional:
@@ -23,32 +23,42 @@ Optional:
 - The GH_HOST environment variable is also supported (handled by gh CLI)
 
 Examples:
-  # For GitHub.com
-  gh-runner-group runners 123 --enterprise myorg
+  # For GitHub.com enterprise
+  gh-runner-group runners 123 --enterprise myenterprise
+
+  # For GitHub.com organization
+  gh-runner-group runners 123 --org myorg
 
   # For GitHub Enterprise Server (using flag)
-  gh-runner-group runners 123 --enterprise myorg --hostname github.example.com
+  gh-runner-group runners 123 --enterprise myenterprise --hostname github.example.com
+  gh-runner-group runners 123 --org myorg --hostname github.example.com
 
   # For GitHub Enterprise Server (using environment variable)
-  GH_HOST=github.example.com gh-runner-group runners 123 --enterprise myorg`,
+  GH_HOST=github.example.com gh-runner-group runners 123 --enterprise myenterprise
+  GH_HOST=github.example.com gh-runner-group runners 123 --org myorg`,
 	Args: cobra.ExactArgs(1),
 	Run:  runRunnersCommand,
 }
 
 var (
 	enterpriseName string
+	orgName        string
 	hostname       string
 )
 
 func init() {
 	// Add the --enterprise flag
-	runnersCmd.Flags().StringVarP(&enterpriseName, "enterprise", "e", "", "Enterprise name (required)")
-	if err := runnersCmd.MarkFlagRequired("enterprise"); err != nil {
-		log.Fatal(err)
-	}
+	runnersCmd.Flags().StringVarP(&enterpriseName, "enterprise", "e", "", "Enterprise name")
+
+	// Add the --org flag
+	runnersCmd.Flags().StringVarP(&orgName, "org", "o", "", "Organization name")
 
 	// Add the --hostname flag
 	runnersCmd.Flags().StringVarP(&hostname, "hostname", "H", "", "GitHub hostname (e.g., github.example.com)")
+
+	// Make enterprise and org mutually exclusive, at least one is required
+	runnersCmd.MarkFlagsMutuallyExclusive("enterprise", "org")
+	runnersCmd.MarkFlagsOneRequired("enterprise", "org")
 }
 
 func runRunnersCommand(cmd *cobra.Command, args []string) {
@@ -61,8 +71,16 @@ func runRunnersCommand(cmd *cobra.Command, args []string) {
 		client.WithHostname(hostname)
 	}
 
-	// Get runners using the client
-	runners, err := client.GetRunners(enterpriseName, runnerGroupID)
+	// Get runners using the client - choose enterprise or org API based on flags
+	var runners []runnergroup.Runner
+	var err error
+
+	if enterpriseName != "" {
+		runners, err = client.GetRunners(enterpriseName, runnerGroupID)
+	} else {
+		runners, err = client.GetOrgRunners(orgName, runnerGroupID)
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
