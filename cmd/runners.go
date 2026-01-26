@@ -43,7 +43,9 @@ var (
 func init() {
 	// Add the --enterprise flag
 	runnersCmd.Flags().StringVarP(&enterpriseName, "enterprise", "e", "", "Enterprise name (required)")
-	runnersCmd.MarkFlagRequired("enterprise")
+	if err := runnersCmd.MarkFlagRequired("enterprise"); err != nil {
+		log.Fatal(err)
+	}
 
 	// Add the --hostname flag
 	runnersCmd.Flags().StringVarP(&hostname, "hostname", "H", "", "GitHub hostname (e.g., github.example.com)")

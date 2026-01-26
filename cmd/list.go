@@ -37,7 +37,9 @@ Examples:
 func init() {
 	// Add the --enterprise flag (shared with runners command)
 	listCmd.Flags().StringVarP(&enterpriseName, "enterprise", "e", "", "Enterprise name (required)")
-	listCmd.MarkFlagRequired("enterprise")
+	if err := listCmd.MarkFlagRequired("enterprise"); err != nil {
+		log.Fatal(err)
+	}
 
 	// Add the --hostname flag (shared with runners command)
 	listCmd.Flags().StringVarP(&hostname, "hostname", "H", "", "GitHub hostname (e.g., github.example.com)")
