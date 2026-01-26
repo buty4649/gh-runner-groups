@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.1.0](https://github.com/buty4649/gh-runner-groups/compare/v1.0.0...v1.1.0) - 2026-01-26
+- Update README with comprehensive documentation by @buty4649 in https://github.com/buty4649/gh-runner-groups/pull/10
+- Add organization support for runner groups management by @buty4649 in https://github.com/buty4649/gh-runner-groups/pull/12
+
 ## [v1.0.0](https://github.com/buty4649/gh-runner-groups/commits/v1.0.0) - 2026-01-26
 - Add CI workflow and Dependabot configuration by @buty4649 in https://github.com/buty4649/gh-runner-groups/pull/1
 - Fix fetch-metadata error version by @buty4649 in https://github.com/buty4649/gh-runner-groups/pull/3
