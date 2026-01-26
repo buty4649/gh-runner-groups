@@ -1,0 +1,28 @@
+name: tagpr
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  tagpr:
+    name: tagpr
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: Songmu/tagpr@6423eaf899ec18cb0f5ad3e5c3a7482595a62f04 # v1.12.1
+        id: tagpr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Call release workflow
+        if: steps.tagpr.outputs.tag != ''
+        uses: ./.github/workflows/release.yml
+        with:
+          tag: ${{ steps.tagpr.outputs.tag }}
