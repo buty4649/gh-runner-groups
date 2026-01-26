@@ -11,10 +11,14 @@ var rootCmd = &cobra.Command{
 	Use:   "gh-runner-group",
 	Short: "A CLI tool for managing GitHub Actions runner groups",
 	Long: `A command line tool for interacting with GitHub runner groups
-and retrieving runner information.
+and retrieving runner information in both Enterprise and Organization contexts.
 
-This tool allows you to list runners in specific runner groups
-and format the output for further processing.`,
+This tool allows you to:
+- List runner groups in enterprises or organizations
+- List runners in specific runner groups with status information
+- Format the output for further processing
+
+Supports both GitHub.com and GitHub Enterprise Server.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

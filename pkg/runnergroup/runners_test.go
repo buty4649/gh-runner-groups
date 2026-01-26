@@ -338,3 +338,59 @@ func TestGetRunners_ValidationError(t *testing.T) {
 		})
 	}
 }
+
+func TestGetOrgRunners_ValidationError(t *testing.T) {
+	tests := []struct {
+		name          string
+		org           string
+		runnerGroupID string
+		expectError   bool
+		expectedError string
+	}{
+		{
+			name:          "valid numeric runner group ID",
+			org:           "test-org",
+			runnerGroupID: "123",
+			expectError:   false,
+		},
+		{
+			name:          "invalid non-numeric runner group ID",
+			org:           "test-org",
+			runnerGroupID: "abc",
+			expectError:   true,
+			expectedError: "invalid runner group ID: abc (must be a number)",
+		},
+		{
+			name:          "empty runner group ID",
+			org:           "test-org",
+			runnerGroupID: "",
+			expectError:   true,
+			expectedError: "invalid runner group ID:  (must be a number)",
+		},
+		{
+			name:          "negative runner group ID",
+			org:           "test-org",
+			runnerGroupID: "-1",
+			expectError:   false, // strconv.Atoi accepts negative numbers
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Note: This will fail when actually calling the GitHub API
+			// In a real test environment, you'd mock the API client
+			client := NewClient()
+			_, err := client.GetOrgRunners(tt.org, tt.runnerGroupID)
+
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("Expected error, but got nil")
+					return
+				}
+				if err.Error() != tt.expectedError {
+					t.Errorf("Expected error %q, got %q", tt.expectedError, err.Error())
+				}
+			}
+		})
+	}
+}

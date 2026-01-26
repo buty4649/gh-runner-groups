@@ -43,6 +43,42 @@ func (c *Client) GetRunners(enterpriseID, runnerGroupID string) ([]Runner, error
 	return allRunners, nil
 }
 
+// GetOrgRunners fetches runners from the specified organization and runner group
+func (c *Client) GetOrgRunners(org, runnerGroupID string) ([]Runner, error) {
+	// Validate runner group ID is a number
+	if _, err := strconv.Atoi(runnerGroupID); err != nil {
+		return nil, fmt.Errorf("invalid runner group ID: %s (must be a number)", runnerGroupID)
+	}
+
+	var allRunners []Runner
+	page := 1
+	perPage := 100
+
+	for {
+		// Build API endpoint with pagination parameters
+		endpoint := fmt.Sprintf("/orgs/%s/actions/runner-groups/%s/runners?per_page=%d&page=%d",
+			org, runnerGroupID, perPage, page)
+
+		// Call GitHub API
+		var response RunnersResponse
+		if err := c.CallAPIWithJSON(endpoint, &response); err != nil {
+			return nil, err
+		}
+
+		// Add runners from this page
+		allRunners = append(allRunners, response.Runners...)
+
+		// If we got fewer runners than per_page, this was the last page
+		if len(response.Runners) < perPage {
+			break
+		}
+
+		page++
+	}
+
+	return allRunners, nil
+}
+
 
 // ANSI color codes
 const (
