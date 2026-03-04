@@ -394,3 +394,102 @@ func TestGetOrgRunners_ValidationError(t *testing.T) {
 		})
 	}
 }
+
+func TestGetRunnerStatus(t *testing.T) {
+	tests := []struct {
+		name     string
+		runner   Runner
+		expected string
+	}{
+		{
+			name: "active runner",
+			runner: Runner{
+				Status: "online",
+				Busy:   true,
+			},
+			expected: "active",
+		},
+		{
+			name: "idle runner",
+			runner: Runner{
+				Status: "online",
+				Busy:   false,
+			},
+			expected: "idle",
+		},
+		{
+			name: "offline runner",
+			runner: Runner{
+				Status: "offline",
+				Busy:   false,
+			},
+			expected: "offline",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetRunnerStatus(tt.runner)
+			if result != tt.expected {
+				t.Errorf("Expected status %q, got %q", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestFilterRunnersByStatus(t *testing.T) {
+	runners := []Runner{
+		{Name: "active-runner", Status: "online", Busy: true},
+		{Name: "idle-runner", Status: "online", Busy: false},
+		{Name: "offline-runner", Status: "offline", Busy: false},
+	}
+
+	tests := []struct {
+		name         string
+		statusFilter string
+		expectedNames []string
+	}{
+		{
+			name:          "no filter",
+			statusFilter:  "",
+			expectedNames: []string{"active-runner", "idle-runner", "offline-runner"},
+		},
+		{
+			name:          "filter by active",
+			statusFilter:  "active",
+			expectedNames: []string{"active-runner"},
+		},
+		{
+			name:          "filter by idle",
+			statusFilter:  "idle",
+			expectedNames: []string{"idle-runner"},
+		},
+		{
+			name:          "filter by offline",
+			statusFilter:  "offline",
+			expectedNames: []string{"offline-runner"},
+		},
+		{
+			name:          "filter by non-existent status",
+			statusFilter:  "nonexistent",
+			expectedNames: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := FilterRunnersByStatus(runners, tt.statusFilter)
+
+			if len(result) != len(tt.expectedNames) {
+				t.Errorf("Expected %d runners, got %d", len(tt.expectedNames), len(result))
+				return
+			}
+
+			for i, runner := range result {
+				if runner.Name != tt.expectedNames[i] {
+					t.Errorf("Expected runner name %q at position %d, got %q", tt.expectedNames[i], i, runner.Name)
+				}
+			}
+		})
+	}
+}

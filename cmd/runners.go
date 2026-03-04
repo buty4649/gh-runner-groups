@@ -29,6 +29,11 @@ Examples:
   # For GitHub.com organization
   gh-runner-group runners 123 --org myorg
 
+  # Filter by status
+  gh-runner-group runners 123 --org myorg --status active
+  gh-runner-group runners 123 --org myorg --status idle
+  gh-runner-group runners 123 --org myorg --status offline
+
   # For GitHub Enterprise Server (using flag)
   gh-runner-group runners 123 --enterprise myenterprise --hostname github.example.com
   gh-runner-group runners 123 --org myorg --hostname github.example.com
@@ -44,6 +49,7 @@ var (
 	enterpriseName string
 	orgName        string
 	hostname       string
+	statusFilter   string
 )
 
 func init() {
@@ -56,6 +62,9 @@ func init() {
 	// Add the --hostname flag
 	runnersCmd.Flags().StringVarP(&hostname, "hostname", "H", "", "GitHub hostname (e.g., github.example.com)")
 
+	// Add the --status flag
+	runnersCmd.Flags().StringVarP(&statusFilter, "status", "s", "", "Filter by runner status (active, idle, offline)")
+
 	// Make enterprise and org mutually exclusive, at least one is required
 	runnersCmd.MarkFlagsMutuallyExclusive("enterprise", "org")
 	runnersCmd.MarkFlagsOneRequired("enterprise", "org")
@@ -63,6 +72,11 @@ func init() {
 
 func runRunnersCommand(cmd *cobra.Command, args []string) {
 	runnerGroupID := args[0]
+
+	// Validate status filter if provided
+	if statusFilter != "" && statusFilter != "active" && statusFilter != "idle" && statusFilter != "offline" {
+		log.Fatalf("Invalid status filter: %s. Valid options are: active, idle, offline", statusFilter)
+	}
 
 	// Create API client with optional hostname
 	// Only pass hostname if explicitly provided via flag (gh handles GH_HOST env var automatically)
@@ -83,6 +97,11 @@ func runRunnersCommand(cmd *cobra.Command, args []string) {
 
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// Filter runners by status if specified
+	if statusFilter != "" {
+		runners = runnergroup.FilterRunnersByStatus(runners, statusFilter)
 	}
 
 	// Sort runners by status (Active -> Idle -> Offline) then by name

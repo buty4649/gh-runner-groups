@@ -209,3 +209,29 @@ func PrintRunnerGroupHeaderAligned(nameWidth int) {
 	paddedHeader := "Name" + strings.Repeat(" ", nameWidth-len("Name"))
 	fmt.Printf("ID\t%s  Visibility\n", paddedHeader)
 }
+
+// GetRunnerStatus returns the status string for a runner ("active", "idle", or "offline")
+func GetRunnerStatus(runner Runner) string {
+	if runner.Status == "online" && runner.Busy {
+		return "active"
+	} else if runner.Status == "online" && !runner.Busy {
+		return "idle"
+	} else {
+		return "offline"
+	}
+}
+
+// FilterRunnersByStatus filters runners by the specified status
+func FilterRunnersByStatus(runners []Runner, statusFilter string) []Runner {
+	if statusFilter == "" {
+		return runners
+	}
+
+	var filteredRunners []Runner
+	for _, runner := range runners {
+		if GetRunnerStatus(runner) == statusFilter {
+			filteredRunners = append(filteredRunners, runner)
+		}
+	}
+	return filteredRunners
+}
