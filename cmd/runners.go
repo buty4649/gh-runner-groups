@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"regexp"
 
 	"github.com/spf13/cobra"
 	"github.com/buty4649/gh-runner-groups/pkg/runnergroup"
@@ -34,6 +35,10 @@ Examples:
   gh-runner-group runners 123 --org myorg --status idle
   gh-runner-group runners 123 --org myorg --status offline
 
+  # Filter by name (regular expression)
+  gh-runner-group runners 123 --org myorg --name "^prod-"
+  gh-runner-group runners 123 --org myorg --name ".*ubuntu.*"
+
   # For GitHub Enterprise Server (using flag)
   gh-runner-group runners 123 --enterprise myenterprise --hostname github.example.com
   gh-runner-group runners 123 --org myorg --hostname github.example.com
@@ -50,6 +55,7 @@ var (
 	orgName        string
 	hostname       string
 	statusFilter   string
+	nameFilter     string
 )
 
 func init() {
@@ -65,6 +71,9 @@ func init() {
 	// Add the --status flag
 	runnersCmd.Flags().StringVarP(&statusFilter, "status", "s", "", "Filter by runner status (active, idle, offline)")
 
+	// Add the --name flag
+	runnersCmd.Flags().StringVarP(&nameFilter, "name", "n", "", "Filter by runner name (regular expression)")
+
 	// Make enterprise and org mutually exclusive, at least one is required
 	runnersCmd.MarkFlagsMutuallyExclusive("enterprise", "org")
 	runnersCmd.MarkFlagsOneRequired("enterprise", "org")
@@ -76,6 +85,16 @@ func runRunnersCommand(cmd *cobra.Command, args []string) {
 	// Validate status filter if provided
 	if statusFilter != "" && statusFilter != "active" && statusFilter != "idle" && statusFilter != "offline" {
 		log.Fatalf("Invalid status filter: %s. Valid options are: active, idle, offline", statusFilter)
+	}
+
+	// Validate and compile name filter regex if provided
+	var nameRegex *regexp.Regexp
+	if nameFilter != "" {
+		var err error
+		nameRegex, err = regexp.Compile(nameFilter)
+		if err != nil {
+			log.Fatalf("Invalid regular expression for name filter: %v", err)
+		}
 	}
 
 	// Create API client with optional hostname
@@ -102,6 +121,11 @@ func runRunnersCommand(cmd *cobra.Command, args []string) {
 	// Filter runners by status if specified
 	if statusFilter != "" {
 		runners = runnergroup.FilterRunnersByStatus(runners, statusFilter)
+	}
+
+	// Filter runners by name regex if specified
+	if nameRegex != nil {
+		runners = runnergroup.FilterRunnersByName(runners, nameRegex)
 	}
 
 	// Sort runners by status (Active -> Idle -> Offline) then by name
