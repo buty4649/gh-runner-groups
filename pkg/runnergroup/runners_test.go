@@ -1,6 +1,7 @@
 package runnergroup
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -479,6 +480,97 @@ func TestFilterRunnersByStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := FilterRunnersByStatus(runners, tt.statusFilter)
+
+			if len(result) != len(tt.expectedNames) {
+				t.Errorf("Expected %d runners, got %d", len(tt.expectedNames), len(result))
+				return
+			}
+
+			for i, runner := range result {
+				if runner.Name != tt.expectedNames[i] {
+					t.Errorf("Expected runner name %q at position %d, got %q", tt.expectedNames[i], i, runner.Name)
+				}
+			}
+		})
+	}
+}
+
+func TestFilterRunnersByName(t *testing.T) {
+	runners := []Runner{
+		{Name: "prod-runner-01"},
+		{Name: "prod-runner-02"},
+		{Name: "dev-runner-01"},
+		{Name: "test-ubuntu-runner"},
+		{Name: "staging-windows-runner"},
+		{Name: "build-macos-runner"},
+	}
+
+	tests := []struct {
+		name          string
+		regexPattern  string
+		expectedNames []string
+		expectError   bool
+	}{
+		{
+			name:          "no filter (nil regex)",
+			regexPattern:  "",
+			expectedNames: []string{"prod-runner-01", "prod-runner-02", "dev-runner-01", "test-ubuntu-runner", "staging-windows-runner", "build-macos-runner"},
+			expectError:   false,
+		},
+		{
+			name:          "filter by prefix prod-",
+			regexPattern:  "^prod-",
+			expectedNames: []string{"prod-runner-01", "prod-runner-02"},
+			expectError:   false,
+		},
+		{
+			name:          "filter by ubuntu anywhere in name",
+			regexPattern:  ".*ubuntu.*",
+			expectedNames: []string{"test-ubuntu-runner"},
+			expectError:   false,
+		},
+		{
+			name:          "filter by suffix ending with -01",
+			regexPattern:  ".*-01$",
+			expectedNames: []string{"prod-runner-01", "dev-runner-01"},
+			expectError:   false,
+		},
+		{
+			name:          "filter by pattern matching runner",
+			regexPattern:  ".*runner.*",
+			expectedNames: []string{"prod-runner-01", "prod-runner-02", "dev-runner-01", "test-ubuntu-runner", "staging-windows-runner", "build-macos-runner"},
+			expectError:   false,
+		},
+		{
+			name:          "filter with no matches",
+			regexPattern:  "^nonexistent-",
+			expectedNames: []string{},
+			expectError:   false,
+		},
+		{
+			name:          "case sensitive match",
+			regexPattern:  "^PROD-",
+			expectedNames: []string{},
+			expectError:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var nameRegex *regexp.Regexp
+			var err error
+
+			if tt.regexPattern != "" {
+				nameRegex, err = regexp.Compile(tt.regexPattern)
+				if err != nil {
+					if !tt.expectError {
+						t.Errorf("Unexpected error compiling regex: %v", err)
+					}
+					return
+				}
+			}
+
+			result := FilterRunnersByName(runners, nameRegex)
 
 			if len(result) != len(tt.expectedNames) {
 				t.Errorf("Expected %d runners, got %d", len(tt.expectedNames), len(result))

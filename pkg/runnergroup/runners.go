@@ -2,6 +2,7 @@ package runnergroup
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -230,6 +231,21 @@ func FilterRunnersByStatus(runners []Runner, statusFilter string) []Runner {
 	var filteredRunners []Runner
 	for _, runner := range runners {
 		if GetRunnerStatus(runner) == statusFilter {
+			filteredRunners = append(filteredRunners, runner)
+		}
+	}
+	return filteredRunners
+}
+
+// FilterRunnersByName filters runners by the specified name regular expression
+func FilterRunnersByName(runners []Runner, nameRegex *regexp.Regexp) []Runner {
+	if nameRegex == nil {
+		return runners
+	}
+
+	var filteredRunners []Runner
+	for _, runner := range runners {
+		if nameRegex.MatchString(runner.Name) {
 			filteredRunners = append(filteredRunners, runner)
 		}
 	}
