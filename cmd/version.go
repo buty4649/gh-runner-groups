@@ -7,7 +7,7 @@ import (
 )
 
 // Version is the current version of gh-runner-groups
-var Version = "1.1.0"
+var Version = "1.1.1"
 
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
